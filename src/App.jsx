@@ -1,15 +1,19 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useEffect } from 'react';
 
 function App() {
 
-  let notifications = true;
+  const [notificationStatus, isnotificationEnabled] = useState(true)
 
   // open notification
 
   const openeNotification = () => {
 
-    close(notification)
-    notifications = true
+    notificationIcon(notification)
+
+    isnotificationEnabled(true)
+
+    console.log("notifications are open");
 
   }
 
@@ -18,7 +22,8 @@ function App() {
 
   const closeNotification = () => {
 
-    close(
+    notificationIcon(
+
       <svg xmlns="http://www.w3.org/2000/svg"
         fill="none" viewBox="0 0 24 24"
         strokeWidth={1.5} stroke="currentColor"
@@ -27,13 +32,16 @@ function App() {
       </svg>
     )
 
-    notifications = false;
+    isnotificationEnabled(false)
+
+    console.log("notifications are closed");
+
   }
 
 
   // notification icons
 
-  const [notification, close] = useState(
+  const [notification, notificationIcon] = useState(
 
     <svg xmlns="http://www.w3.org/2000/svg"
       fill="none" viewBox="0 0 24 24"
@@ -43,6 +51,7 @@ function App() {
     </svg>
 
   )
+
 
 
   // notes
@@ -56,33 +65,54 @@ function App() {
     },
   ])
 
+  const notesRef = useRef(notes);
 
-  // delay tasks
+  useEffect(() => {
 
-  const [delay, newDelay] = useState("no delay tasks yet . you're so ontime!")
+    notesRef.current = notes;
+  }, [notes]);
 
 
   // add new note function
 
   const add = () => {
 
-    setNotes(prevNotes => [
+    const newNote = {
 
-      ...prevNotes,
-      {
-        id: prevNotes.length,
-        title: '',
-        info: new Date().toLocaleDateString(),
-        isEditing: true,
-      },
-    ])
+      id: notesRef.current.length,
+      title: '',
+      info: new Date().toLocaleDateString(),
+      isEditing: true,
+    };
 
-    setTimeout(removeAll, 86400000)
-
-  }
+    setNotes(prevNotes => [...prevNotes, newNote]);
 
 
-  // remove all function
+
+    // getting id of the new note
+
+    const newNoteId = newNote.id;
+
+
+    // now we program the reminder
+
+    const reminder = setInterval(() => {
+
+      const updatedNote = notesRef.current.find(note => note.id === newNoteId);
+
+      if (updatedNote) {
+
+        if (Notification.permission === "granted") {
+          let message = new Notification("don't forget", { body: updatedNote.title });
+        }
+      }
+
+    }, 10000);
+
+  };
+
+
+  // remove all function after 24 hours
 
   const removeAll = () => {
 
@@ -108,36 +138,38 @@ function App() {
     )
   }
 
+  // week day 
+
   let date = new Date();
   let [weekday, day] = useState(date.getDay())
 
   switch (weekday) {
 
-    case 0: day("Saturday")
+    case 0: day("Sunday")
 
       break;
 
-    case 1: day("Sunday")
+    case 1: day("Monday")
 
       break;
 
-    case 2: day("Monday")
+    case 2: day("Tuesday")
 
       break;
 
-    case 3: day("Tuesday")
+    case 3: day("Wednesday")
 
       break;
 
-    case 4: day("Wednesday")
+    case 4: day("Thursday")
 
       break;
 
-    case 5: day("Thursday")
+    case 5: day("Friday")
 
       break;
 
-    case 6: day("Friday")
+    case 6: day("Saturday")
 
       break;
 
@@ -209,18 +241,29 @@ function App() {
 
               {note.isEditing ? (
 
-                <input
-                  type="text"
-                  value={note.title}
-                  onChange={e => updateTitle(note.id, e.target.value)}
-                  placeholder="new note..."
-                  className='text-md text-white pl-3 pt-2 bg-white/0 outline-none placeholder:text-white placeholder:text-md'
-                />
+
+                // note
+
+                <>
+                  <input
+                    type="text"
+                    value={note.title}
+                    onChange={e => updateTitle(note.id, e.target.value)}
+                    placeholder="new note..."
+                    className='text-md text-white pl-3 pt-2 bg-white/0 outline-none placeholder:text-white placeholder:text-md'
+                  />
+
+                </>
+
 
               ) : (
+
+                // add note
+
                 <>
                   <h1 className='text-md text-white pl-3 pt-2'>{note.title}</h1>
                   <h2 className='text-xs text-white pl-4 pt-2'>{note.info}</h2>
+
                 </>
               )}
 
@@ -262,17 +305,6 @@ function App() {
 
         ))}
 
-
-        {/* delay tasks */}
-
-        {/* <div className='w-full h-2/4 bg-white/20 mt-20'>
-
-          <hr />
-
-          <h1 className='text-white mt-5'> {delay} </h1>
-
-
-        </div> */}
 
       </div>
 
